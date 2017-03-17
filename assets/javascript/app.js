@@ -19,9 +19,8 @@
   	//Grabs user input 
   	var trainName = $("#train-name").val().trim();
   	var destName = $("#destination").val().trim();
-  	var firstTrainTime = $("#train-time").val().trim();
   	var freqTime = $("#frequency").val().trim();
-
+  	var firstTrainTime = $("#train-time").val().trim();
   	
 
   //Creates a local "temporary" object for holding train data
@@ -29,17 +28,20 @@
   	name: trainName,
   	destination: destName,
   	firstDeparture: firstTrainTime,
-  	frequency: freqTime
+  	frequency: freqTime,
+  	dateAdded: firebase.database.ServerValue.TIMESTAMP
   };
 
   //Uploads new train row to the database
   database.ref().push(newRow);
+
 
   //Logs all new info to console
   console.log(newRow.name);
   console.log(newRow.destination);
   console.log(newRow.firstDeparture);
   console.log(newRow.frequency);
+  console.log(newRow.dateAdded);
   console.log("----------------------");
 
   //Alert
@@ -58,85 +60,63 @@
 
 //firebase event for pulling train row objects properties and their values, will then use to cal next arrival and minutes away
 //==================================================================
-database.ref().on("child_added", function(childSnapshot, preChildKey) {
+function timed(){
+	$("tbody").empty(); //to empty previous rows to include updated info after a minute
 
-	console.log(childSnapshot.val());
+	database.ref().on("child_added", function(childSnapshot, preChildKey) {
 
-	//Store everthing into a variable.
-  	var trainName = childSnapshot.val().name;
-  	var destName = childSnapshot.val().destination;
-  	var freqTime = childSnapshot.val().frequency;
-  	var firstTrainTime = childSnapshot.val().firstDeparture;
+		console.log(childSnapshot.val());
 
- //formatting and calculation of next arrival and minutes remaining, to append to document
- //---------------------------------------------------------------------------------------
-  	var FconvertedTime = moment(firstTrainTime, "hh:mm").subtract(1, "years");
-  		console.log(FconvertedTime);
-  	
-  	//created variable to hold current time
-  	var currentTime = moment();
- 		console.log("Current time: " + moment(currentTime).format("hh:mm"));
+		//Store everthing into a variable.
+	  	var trainName = childSnapshot.val().name;
+	  	var destName = childSnapshot.val().destination;
+	  	var freqTime = childSnapshot.val().frequency;
+	  	var firstTrainTime = childSnapshot.val().firstDeparture;
 
- 	//created variable to find the difference between the current time and 
-	var diffTime = moment().diff(moment(FconvertedTime), "minutes");
-		console.log("Difference in Time: " + diffTime);
+	 //formatting and calculation of next arrival and minutes remaining, to append to document
+	 //---------------------------------------------------------------------------------------
+	 
+	  	var FconvertedTime = moment(firstTrainTime, "hh:mm").subtract(1, "years");
+	  		console.log(FconvertedTime);
 
-	//created variable to find the remainder between the the var diffTime and the frequency of train, to use var below
-	var remainder = diffTime % freqTime;
-  		console.log(remainder);
+	  	//created variable to hold current time
+	  	var currentTime = moment();
+	 		console.log("Current time: " + moment(currentTime).format("hh:mm"));
+	  	
+	 	//created variable to find the difference between the current time and 
+		var diffTime = moment().diff(moment(FconvertedTime), "minutes");
+			console.log("Difference in Time: " + diffTime);
 
-  	//created variable to find the difference between the frequency of trains and the var remainder
-  	var tMinTillArrival = freqTime - remainder;
-  		console.log("Minutes till train" + tMinTillArrival);
+		//created variable to find the remainder between the the var diffTime and the frequency of train, to use var below
+		var remainder = diffTime % freqTime;
+	  		console.log(remainder);
 
-  	//created variable to find the next avaiable train by taking the minutes remaining and adding it to the current time.
-  	var nextTrain = moment().add(tMinTillArrival, "minutes");
-  		console.log("Arrival TIME: " + moment(nextTrain).format("hh:mm A"));
-
-  	//created variable to format the next train to show in military time, hh:mm (15:00) compared to hh:mm (3:00pm)
-  	var conNextTrain = moment(nextTrain).format("hh:mm A");
-
-  	//Train Info
-  	console.log(trainName);
-  	console.log(destName);
-	console.log(firstTrainTime);
-	console.log(freqTime);
-	console.log("----------------------");
+	  	//created variable to find the difference between the frequency of trains and the var remainder
+	  	var tMinTillArrival = freqTime - remainder;
+	  		console.log("Minutes till train" + tMinTillArrival);
 
 
-  // Add each train's data into the table, using values from firebase and using calculations from above
-  $("#train-table > tbody").append("<tr><td>" + trainName + "</td><td>" + destName + "</td><td>" +
-  freqTime + "</td><td>" + conNextTrain + "</td><td>" + tMinTillArrival +"</td></tr>");
+	  	//created variable to find the next avaiable train by taking the minutes remaining and adding it to the current time.
+	  	var nextTrain = moment().add(tMinTillArrival, "minutes");
+	  		console.log("Arrival TIME: " + moment(nextTrain).format("hh:mm A"));
+
+	  	//created variable to format the next train to show in military time, hh:mm (15:00) compared to hh:mm (3:00pm)
+	  	var conNextTrain = moment(nextTrain).format("hh:mm A");
+	  
+	 
+
+	  	//Train Info
+	  	console.log(trainName);
+	  	console.log(destName);
+		console.log(firstTrainTime);
+		console.log(freqTime);
+		console.log("----------------------");
 
 
+	  // Add each train's data into the table, using values from firebase and using calculations from above
+	  $("#train-table > tbody").append("<tr><td>" + trainName + "</td><td>" + destName + "</td><td>" +
+	  freqTime + "</td><td class='nextArrival'>" + conNextTrain + "</td><td>" + tMinTillArrival +"</td></tr>");
+	})
+}timed() //run function on load
+setInterval(timed, 1000 * 60) //after a minute, next arrival and minutes to arrive updated
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-})
