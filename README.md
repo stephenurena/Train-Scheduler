@@ -2,4 +2,4 @@
 
 
 
-https://young-reef-43975.herokuapp.com/
+https://train-scheduler-284e2.firebaseapp.com/
